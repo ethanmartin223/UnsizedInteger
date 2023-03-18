@@ -1,5 +1,7 @@
 // Theoretical number of digits max integer is [-2**63, 2**63-1] or 8.3010348e+19;
 
+import java.util.Arrays;
+
 public class UnsizedInteger {
     private static final String PLUS_SIGN = "+";
     private static final String NEG_SIGN = "-";
@@ -7,6 +9,8 @@ public class UnsizedInteger {
     private byte[] numberData;
     private boolean isNegative = false;
 
+
+    // ----------------------- Constructors -------------------- //
     public UnsizedInteger(String n) {
         if (n.startsWith(NEG_SIGN) || n.startsWith(PLUS_SIGN)) {
             numberData = new byte[n.length() - 1];
@@ -31,7 +35,6 @@ public class UnsizedInteger {
     //dependency injection
     public UnsizedInteger(long n) {
         this(Long.toString(n));
-        System.out.println(n);
     }
 
     public String toString() {
@@ -42,23 +45,71 @@ public class UnsizedInteger {
     }
 
     // --------------------- Mathematical Operations --------------------- //
-
-    // Addition
-    public UnsizedInteger add(String n) {
-        int numberOfOperations = n.length();
-        return new UnsizedInteger();
+    public UnsizedInteger add(UnsizedInteger n) {
+        if (isNegative()==n.isNegative()) {
+            return _add(n);
+        } else {
+            return _sub(n);
+        }
     }
 
-    public UnsizedInteger add(int n) {
-        return add(Integer.toString(n));
+    //private
+    private UnsizedInteger oldub(UnsizedInteger n) {
+        NormalizeArraySizes(n);
+        for (int i = n.length()-1; i >= 0; i--) {
+            byte tempB = (byte) (numberData[i] - n.numberData[i]);
+            if (tempB < 0) {
+                isNegative = true;
+                tempB *= -1;
+            }
+            numberData[i] = tempB;
+            System.out.println(Arrays.toString(numberData));
+        }
+        return this;
     }
 
-    // Subtraction
-    //public UnsizedInteger subtract(String n) {}
 
-    // --------------------- Mathematical Operations --------------------- //
+
+    private UnsizedInteger _add(UnsizedInteger n) {
+        NormalizeArraySizes(n);
+        for (int i=n.length()-1; i>=0; i--) {
+            byte tempB = (byte) (numberData[i] + n.numberData[i]);
+            if (tempB > 9) {
+                numberData[i] = (byte) (tempB%0xA);
+            } else {
+                numberData[i] = (tempB);
+            }
+            if (i==0 && tempB >0x9) {
+                byte[] outputArray = new byte[length()+1];
+                System.arraycopy(numberData, 0, outputArray, 1, numberData.length);
+                numberData = outputArray;
+                numberData[i] += (tempB / 0xA);
+            } else if (i!=0) numberData[i-1] += (tempB / 0xA);
+        }
+        return this;
+    }
+
+    // --------------------- Getter ---------------------- //
+    public int length() {
+        return numberData.length;
+    }
+
     public boolean isNegative() {
         return isNegative;
+    }
+
+    // --------------------- Private Helper Methods ----------------------- //
+    private void NormalizeArraySizes(UnsizedInteger n) {
+        byte[] arrayCopy;
+        if (length() > n.length()) {
+            arrayCopy = new byte[length()];
+            System.arraycopy(n.numberData, 0, arrayCopy, numberData.length - n.numberData.length, n.numberData.length);
+            n.numberData = arrayCopy;
+        } else if (length() < n.length()) {
+            arrayCopy = new byte[n.length()];
+            System.arraycopy(numberData, 0, arrayCopy, n.numberData.length - numberData.length, numberData.length);
+            numberData = arrayCopy;
+        }
     }
 
 }
